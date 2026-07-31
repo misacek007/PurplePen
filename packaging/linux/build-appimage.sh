@@ -130,15 +130,14 @@ apply-patches() {
     [[ -e "${patch_files[0]}" ]] || return 0
 
     log "Applying source patches..."
-    local patch_file patch_name
+
+    # Patches are in git-format-patch MIME format, so use git-am (not git-apply).
+    git -C "$SUBMODULE_DIR" am --3way "${patch_files[@]}" \
+        || die "Patch application failed. Run: git -C src am --abort"
+
+    local patch_name
     for patch_file in "${patch_files[@]}"; do
-        patch_name="$(basename "$patch_file")"
-        if git -C "$SUBMODULE_DIR" apply --check "$patch_file" >/dev/null 2>&1; then
-            git -C "$SUBMODULE_DIR" apply "$patch_file"
-            info "Applied: $patch_name"
-        else
-            die "Patch failed to apply: $patch_name"
-        fi
+        info "Applied: $(basename "$patch_file")"
     done
     echo ""
 }
