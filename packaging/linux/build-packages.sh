@@ -79,6 +79,11 @@ requirements() {
     # .NET SDK + base tools (delegates to build-appimage.sh)
     ARCH="$ARCH" OUTPUT_DIR="$OUTPUT_DIR" bash "$APPIMAGE_SCRIPT" requirements
 
+    # build-appimage.sh installs dotnet in a subprocess, so PATH doesn't propagate.
+    if [[ -d "$HOME/.dotnet" ]] && ! command -v dotnet >/dev/null 2>&1; then
+        export PATH="$HOME/.dotnet:$PATH"
+    fi
+
     # fpm and its dependencies
     if ! command -v fpm >/dev/null 2>&1; then
         info "Installing fpm..."
@@ -96,6 +101,11 @@ requirements() {
 
 ensure-published() {
     local publish_dir="$SRC_DIR/AvPurplePen/bin/Release/net10.0/publish/$RID"
+
+    # Ensure dotnet is on PATH (may have been installed by requirements() subprocess)
+    if [[ -d "$HOME/.dotnet" ]] && ! command -v dotnet >/dev/null 2>&1; then
+        export PATH="$HOME/.dotnet:$PATH"
+    fi
 
     if [[ ! -d "$publish_dir" ]] || [[ -z "$(ls -A "$publish_dir" 2>/dev/null)" ]]; then
         log "No publish output found. Running publish via build-appimage.sh..."
