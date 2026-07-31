@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Michal Novacek <mnovacek@redhat.com>
+Date: Thu, 31 Jul 2026 10:00:00 +0200
+Subject: [PATCH] fix(build): stub GitVersionInformation for shallow clone
+ compatibility
+
+PDFsharp uses GitVersion.MsBuild to generate a GitVersionInformation
+class at build time. This fails on shallow clones because GitVersion
+needs to walk the full commit graph. Replace the generated-class
+references with static version strings so the build succeeds
+regardless of clone depth.
+
+diff --git a/src/MapModel/PDFsharp/src/foundation/src/shared/src/PdfSharp.Shared/Internal/PdfSharpGitVersionInformation.cs b/src/MapModel/PDFsharp/src/foundation/src/shared/src/PdfSharp.Shared/Internal/PdfSharpGitVersionInformation.cs
+index 4a52820..6f3d3f3 100644
+--- a/src/MapModel/PDFsharp/src/foundation/src/shared/src/PdfSharp.Shared/Internal/PdfSharpGitVersionInformation.cs
++++ b/src/MapModel/PDFsharp/src/foundation/src/shared/src/PdfSharp.Shared/Internal/PdfSharpGitVersionInformation.cs
+@@ -4,53 +4,19 @@
+ namespace PdfSharp.Internal
+ {
+     /// <summary>
+-    /// Product version information from git version tool.
++    /// Product version information. Stubbed with static values so the build
++    /// does not depend on GitVersion (which requires full git history).
+     /// </summary>
+     public static class PdfSharpGitVersionInformation
+     {
+-        /// <summary>
+-        /// The major version number of the product.
+-        /// </summary>
+-        public static string Major = global::GitVersionInformation.Major;
+-
+-        /// <summary>
+-        /// The minor version number of the product.
+-        /// </summary>
+-        public static string Minor = global::GitVersionInformation.Minor;
+-
+-        /// <summary>
+-        /// The patch number of the product.
+-        /// </summary>
+-        public static string Patch = global::GitVersionInformation.Patch;
+-
+-        /// <summary>
+-        /// The Version pre-release string for NuGet.
+-        /// </summary>
+-        public static string PreReleaseLabel =  global::GitVersionInformation.PreReleaseLabel;
+-
+-        /// <summary>
+-        /// The full version number.
+-        /// </summary>
+-        public static string MajorMinorPatch = global::GitVersionInformation.MajorMinorPatch;
+-
+-        /// <summary>
+-        /// The full semantic version number created by GitVersion.
+-        /// </summary>
+-        public static string SemVer = global::GitVersionInformation.SemVer;
+-
+-        /// <summary>
+-        /// The full informational version number created by GitVersion.
+-        /// </summary>
+-        public static string InformationalVersion =  global::GitVersionInformation.InformationalVersion;
+-
+-        /// <summary>
+-        /// The branch name of the product.
+-        /// </summary>
+-        public static string BranchName = global::GitVersionInformation.BranchName;
+-
+-        /// <summary>
+-        /// The commit date of the product.
+-        /// </summary>
+-        public static string CommitDate = global::GitVersionInformation.CommitDate;
++        public static string Major = "6";
++        public static string Minor = "2";
++        public static string Patch = "0";
++        public static string PreReleaseLabel = "";
++        public static string MajorMinorPatch = "6.2.0";
++        public static string SemVer = "6.2.0";
++        public static string InformationalVersion = "6.2.0";
++        public static string BranchName = "";
++        public static string CommitDate = "";
+     }
+ }
