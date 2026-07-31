@@ -1,4 +1,4 @@
-name: Build Linux AppImage
+name: Build Linux Packages
 
 on:
   push:
@@ -133,18 +133,136 @@ jobs:
           path: artifacts/*.AppImage
           retention-days: 14
 
+  build-deb:
+    name: Build .deb (Debian)
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+    steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y wget git fuse libfuse2 librsvg2-bin file ca-certificates ruby ruby-dev gcc make
+
+      - name: Install .NET 10 SDK
+        run: |
+          apt-get install -y ca-certificates apt-transport-https
+          wget -q https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel 10.0
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+
+      - name: Install fpm
+        run: gem install fpm
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Mark workspace as safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/src"
+
+      - name: Checkout upstream ref
+        if: inputs.upstream_ref != ''
+        run: |
+          git -C src fetch --tags origin
+          git -C src checkout ${{ inputs.upstream_ref }}
+
+      - name: Build .deb package
+        run: OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts" bash packaging/linux/build-packages.sh build-deb
+
+      - name: Verify .deb package
+        run: |
+          DEB=$(ls "$GITHUB_WORKSPACE/artifacts/"*.deb)
+          echo "Package: $DEB"
+          echo "Size: $(du -h "$DEB" | cut -f1)"
+          dpkg-deb --info "$DEB"
+          dpkg -i "$DEB"
+          test -x /usr/bin/purplepen
+          test -L /usr/bin/purplepen
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: artifacts/*.deb
+          retention-days: 14
+
+  build-rpm:
+    name: Build .rpm (CentOS Stream)
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/centos/centos:stream9
+    steps:
+      - name: Install system dependencies
+        run: |
+          dnf install -y wget git fuse fuse-libs librsvg2-tools file libicu ruby ruby-devel gcc make rpm-build
+
+      - name: Install .NET 10 SDK
+        run: |
+          wget -q https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel 10.0
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+
+      - name: Install fpm
+        run: gem install fpm
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Mark workspace as safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/src"
+
+      - name: Checkout upstream ref
+        if: inputs.upstream_ref != ''
+        run: |
+          git -C src fetch --tags origin
+          git -C src checkout ${{ inputs.upstream_ref }}
+
+      - name: Build .rpm package
+        run: OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts" bash packaging/linux/build-packages.sh build-rpm
+
+      - name: Verify .rpm package
+        run: |
+          RPM=$(ls "$GITHUB_WORKSPACE/artifacts/"*.rpm)
+          echo "Package: $RPM"
+          echo "Size: $(du -h "$RPM" | cut -f1)"
+          rpm -qpi "$RPM"
+          rpm -i "$RPM"
+          test -x /usr/bin/purplepen
+          test -L /usr/bin/purplepen
+
+      - name: Upload .rpm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package
+          path: artifacts/*.rpm
+          retention-days: 14
+
   release:
     name: Publish Release
-    needs: build-appimage-debian
+    needs: [build-appimage-debian, build-deb, build-rpm]
     if: inputs.release
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download AppImage artifact
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: appimage-debian
+          merge-multiple: true
 
       - name: Determine release tag
         id: tag
@@ -165,6 +283,9 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: PurplePen AppImage ${{ steps.tag.outputs.tag }}
-          files: '*.AppImage'
+          files: |
+            *.AppImage
+            *.deb
+            *.rpm
           prerelease: ${{ inputs.prerelease }}
           generate_release_notes: true
