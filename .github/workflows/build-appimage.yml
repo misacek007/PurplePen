@@ -142,7 +142,7 @@ jobs:
       - name: Install system dependencies
         run: |
           apt-get update
-          apt-get install -y wget git fuse libfuse2 librsvg2-bin file ca-certificates ruby ruby-dev gcc make
+          apt-get install -y wget git fuse libfuse2 librsvg2-bin file ca-certificates make
 
       - name: Install .NET 10 SDK
         run: |
@@ -152,9 +152,6 @@ jobs:
           ./dotnet-install.sh --channel 10.0
           echo "$HOME/.dotnet" >> "$GITHUB_PATH"
           echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
-
-      - name: Install fpm
-        run: gem install fpm
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -174,7 +171,7 @@ jobs:
           git -C src checkout ${{ inputs.upstream_ref }}
 
       - name: Build .deb package
-        run: OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts" bash packaging/linux/build-packages.sh build-deb
+        run: make deb OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts"
 
       - name: Verify .deb package
         run: |
@@ -182,9 +179,12 @@ jobs:
           echo "Package: $DEB"
           echo "Size: $(du -h "$DEB" | cut -f1)"
           dpkg-deb --info "$DEB"
+          dpkg-deb --contents "$DEB"
           dpkg -i "$DEB"
-          test -x /usr/bin/purplepen
           test -L /usr/bin/purplepen
+          test -d /opt/purplepen
+          test -f /usr/share/applications/org.purplepen.PurplePen.desktop
+          test -f /usr/share/metainfo/org.purplepen.PurplePen.metainfo.xml
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
@@ -201,7 +201,7 @@ jobs:
     steps:
       - name: Install system dependencies
         run: |
-          dnf install -y wget git fuse fuse-libs librsvg2-tools file libicu ruby ruby-devel gcc make rpm-build
+          dnf install -y wget git fuse fuse-libs librsvg2-tools file libicu make
 
       - name: Install .NET 10 SDK
         run: |
@@ -210,9 +210,6 @@ jobs:
           ./dotnet-install.sh --channel 10.0
           echo "$HOME/.dotnet" >> "$GITHUB_PATH"
           echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
-
-      - name: Install fpm
-        run: gem install fpm
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -232,7 +229,7 @@ jobs:
           git -C src checkout ${{ inputs.upstream_ref }}
 
       - name: Build .rpm package
-        run: OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts" bash packaging/linux/build-packages.sh build-rpm
+        run: make rpm OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts"
 
       - name: Verify .rpm package
         run: |
@@ -240,9 +237,12 @@ jobs:
           echo "Package: $RPM"
           echo "Size: $(du -h "$RPM" | cut -f1)"
           rpm -qpi "$RPM"
+          rpm -qlp "$RPM"
           rpm -i "$RPM"
-          test -x /usr/bin/purplepen
           test -L /usr/bin/purplepen
+          test -d /opt/purplepen
+          test -f /usr/share/applications/org.purplepen.PurplePen.desktop
+          test -f /usr/share/metainfo/org.purplepen.PurplePen.metainfo.xml
 
       - name: Upload .rpm artifact
         uses: actions/upload-artifact@v4

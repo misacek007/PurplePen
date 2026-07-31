@@ -231,8 +231,7 @@ run-fpm() {
         --iteration "$iteration" \
         --architecture "$fpm_arch" \
         --license "MIT" \
-        --vendor "Purple Pen Software" \
-        --maintainer "Purple Pen Software" \
+	--maintainer "Michal Novacek <michal.novacek@gmail.com>" \
         --url "https://purple-pen.org" \
         --description "Course setting software for orienteering" \
         --category "Education" \

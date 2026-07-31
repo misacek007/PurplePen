@@ -99,9 +99,27 @@ requirements() {
 
     if [[ -f /etc/debian_version ]]; then
         apt-get update
-        apt-get install -y wget git fuse libfuse2 librsvg2-bin file ca-certificates
+        apt-get install -y \
+		ca-certificates \
+		file \
+		fuse \
+		git \
+		libfuse2 \
+		librsvg2-bin \
+		make \
+		wget \
+		;
     elif [[ -f /etc/redhat-release ]]; then
-        dnf install -y wget git fuse fuse-libs librsvg2-tools file libicu
+        dnf install -y \
+		file \
+		fuse \
+		fuse-libs \
+		git \
+		libicu \
+		librsvg2-tools \
+		make \
+		wget \
+	       ;	
     else
         die "Unsupported distro. Install manually: git, wget, fuse, librsvg2, .NET 10 SDK"
     fi

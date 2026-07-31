@@ -26,7 +26,7 @@ SCRIPT_TARGETS := setup-env requirements apply-patches extract-version publish \
        cont-build-ubuntu cont-build-centos cont-enter \
        cont-appimage cont-deb cont-rpm cont-flatpak cont-all \
        flatpak flatpak-deps flatpak-install flatpak-run flatpak-nuget-sources \
-       deb rpm packages \
+       deb rpm packages install-fpm \
        $(SCRIPT_TARGETS)
 .DEFAULT_GOAL := help
 
@@ -55,6 +55,7 @@ help:
 	@echo "  deb                 Build .deb package (Debian/Ubuntu)"
 	@echo "  rpm                 Build .rpm package (CentOS/RHEL/Fedora)"
 	@echo "  packages            Build both .deb and .rpm"
+	@echo "  install-fpm         Install fpm packaging tool (auto-run by deb/rpm)"
 	@echo ""
 	@echo "Container builds (podman):"
 	@echo "  cont-appimage       Build AppImage in Ubuntu container"
@@ -138,13 +139,28 @@ check-patches: update
 
 # --- Native packages (fpm) ---
 
-deb: update
+install-fpm:
+	@if ! command -v fpm >/dev/null 2>&1; then \
+		echo ">>> Installing fpm..."; \
+		if [ -f /etc/debian_version ]; then \
+			DEBIAN_FRONTEND=noninteractive apt-get update && \
+			DEBIAN_FRONTEND=noninteractive apt-get install -y ruby ruby-dev gcc make rpm; \
+		elif [ -f /etc/redhat-release ]; then \
+			dnf install -y ruby ruby-devel gcc make rpm-build; \
+		else \
+			echo "ERROR: Install fpm manually: gem install fpm" >&2; exit 1; \
+		fi; \
+		gem install fpm; \
+	fi
+	@echo "    fpm $$(fpm --version)"
+
+deb: update install-fpm
 	ARCH=$(ARCH) OUTPUT_DIR=$(OUTPUT_DIR) bash $(PKG_SCRIPT) build-deb
 
-rpm: update
+rpm: update install-fpm
 	ARCH=$(ARCH) OUTPUT_DIR=$(OUTPUT_DIR) bash $(PKG_SCRIPT) build-rpm
 
-packages: update
+packages: update install-fpm
 	ARCH=$(ARCH) OUTPUT_DIR=$(OUTPUT_DIR) bash $(PKG_SCRIPT) build
 
 # --- Flatpak ---
