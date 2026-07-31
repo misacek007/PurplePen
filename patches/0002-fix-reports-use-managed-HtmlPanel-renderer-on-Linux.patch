@@ -1,16 +1,7 @@
 From 64d7aef3de682174ed0b4d807caaee9463ee3b7e Mon Sep 17 00:00:00 2001
 From: Michal Novacek <mnovacek@redhat.com>
 Date: Wed, 29 Jul 2026 15:03:39 +0200
-Subject: [PATCH 2/3] fix(reports): use managed HtmlPanel renderer on Linux
-X-Organization: Red Hat, Inc.
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------2.52.0"
-
-This is a multi-part message in MIME format.
---------------2.52.0
-Content-Type: text/plain; charset=UTF-8; format=fixed
-Content-Transfer-Encoding: 8bit
-
+Subject: [PATCH] fix(reports): use managed HtmlPanel renderer on Linux
 
 NativeWebView (WebKitGTK) fails to composite inside the Avalonia window
 on Linux, leaving report dialogs blank. Use HtmlPanel from
@@ -19,6 +10,7 @@ Windows behavior is unchanged (still uses WebView2).
 
 Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 Signed-off-by: Michal Novacek <mnovacek@redhat.com>
+
 ---
  src/AvPurplePen/AvPurplePen.csproj            | 49 +++++++++--
  .../Views/Dialogs/ReportDialog.axaml          | 18 ++--
@@ -28,11 +20,6 @@ Signed-off-by: Michal Novacek <mnovacek@redhat.com>
  src/Directory.Packages.props                  | 11 +--
  6 files changed, 173 insertions(+), 67 deletions(-)
 
-
---------------2.52.0
-Content-Type: text/x-patch; name="0002-fix-reports-use-managed-HtmlPanel-renderer-on-Linux.patch"
-Content-Transfer-Encoding: 8bit
-Content-Disposition: attachment; filename="0002-fix-reports-use-managed-HtmlPanel-renderer-on-Linux.patch"
 
 diff --git a/src/AvPurplePen/AvPurplePen.csproj b/src/AvPurplePen/AvPurplePen.csproj
 index 2196bc4bf..320f5b460 100644
@@ -459,7 +446,5 @@ index e672ac4c8..b35db2482 100644
    </ItemGroup>
 -</Project>
 +</Project>
-
---------------2.52.0--
 
 

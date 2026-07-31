@@ -1,17 +1,7 @@
 From 951b0e4fa05bfa432ae94f35ed3d22fa671ca298 Mon Sep 17 00:00:00 2001
 From: Michal Novacek <mnovacek@redhat.com>
 Date: Wed, 29 Jul 2026 15:03:59 +0200
-Subject: [PATCH 3/3] fix(i18n): add explicit Culture metadata for satellite
- assembly generation
-X-Organization: Red Hat, Inc.
-MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------2.52.0"
-
-This is a multi-part message in MIME format.
---------------2.52.0
-Content-Type: text/plain; charset=UTF-8; format=fixed
-Content-Transfer-Encoding: 8bit
-
+Subject: [PATCH] fix(i18n): add explicit Culture metadata for satellite assembly generation
 
 Building with DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 (no ICU) prevents
 MSBuild AssignCulture from detecting culture names, producing no
@@ -20,15 +10,11 @@ in AvPurplePen and PurplePenCore so all 32 languages are included.
 
 Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 Signed-off-by: Michal Novacek <mnovacek@redhat.com>
+
 ---
  src/PurplePenCore/PurplePenCore.csproj | 137 +++++++++++++++++++++----
  1 file changed, 119 insertions(+), 18 deletions(-)
 
-
---------------2.52.0
-Content-Type: text/x-patch; name="0003-fix-i18n-add-explicit-Culture-metadata-for-satellite.patch"
-Content-Transfer-Encoding: 8bit
-Content-Disposition: attachment; filename="0003-fix-i18n-add-explicit-Culture-metadata-for-satellite.patch"
 
 diff --git a/src/PurplePenCore/PurplePenCore.csproj b/src/PurplePenCore/PurplePenCore.csproj
 index 3c9450525..0f591d308 100644
@@ -194,7 +180,5 @@ index 3c9450525..0f591d308 100644
    </ItemGroup>
  
    <ItemGroup>
-
---------------2.52.0--
 
 
