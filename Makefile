@@ -1,4 +1,4 @@
-# PurplePen Linux Packaging (AppImage + Flatpak)
+# PurplePen Linux Packaging (AppImage + Flatpak + deb/rpm)
 #
 # All build-script targets are available as Make targets.
 # TAG= checks out an upstream ref before running.
@@ -7,6 +7,7 @@ SHELL := /bin/bash
 SUBMODULE_DIR := src
 PATCHES_DIR := patches
 BUILD_SCRIPT := packaging/linux/build-appimage.sh
+PKG_SCRIPT   := packaging/linux/build-packages.sh
 FLATPAK_MANIFEST := packaging/flatpak/org.purplepen.PurplePen.yml
 
 ARCH ?= x64
@@ -23,7 +24,9 @@ SCRIPT_TARGETS := setup-env requirements apply-patches extract-version publish \
 
 .PHONY: help build check-patches update clean submodule-init \
        cont-build-ubuntu cont-build-centos cont-enter \
+       cont-appimage cont-deb cont-rpm cont-flatpak cont-all \
        flatpak flatpak-deps flatpak-install flatpak-run flatpak-nuget-sources \
+       deb rpm packages \
        $(SCRIPT_TARGETS)
 .DEFAULT_GOAL := help
 
@@ -35,9 +38,9 @@ help:
 	@echo "Usage: make <target> [TAG=<ref>] [ARCH=x64|arm64] [OUTPUT_DIR=<path>]"
 	@echo ""
 	@echo "Pipeline:"
-	@echo "  build               Run the full build pipeline"
+	@echo "  build               Run the full AppImage build pipeline (depends: update)"
 	@echo ""
-	@echo "Build steps (from build-appimage.sh):"
+	@echo "Build steps (from build-appimage.sh, each depends: update):"
 	@echo "  setup-env           Resolve paths, map architecture, apply RHEL SHA-1 workaround"
 	@echo "  requirements        Install system dependencies and .NET SDK"
 	@echo "  apply-patches       Apply patches/*.patch to the upstream submodule"
@@ -48,21 +51,31 @@ help:
 	@echo "  fetch-appimagetool  Download appimagetool if not cached"
 	@echo "  create-appimage     Package AppDir into a portable .AppImage"
 	@echo ""
+	@echo "Native packages (fpm, each depends: update):"
+	@echo "  deb                 Build .deb package (Debian/Ubuntu)"
+	@echo "  rpm                 Build .rpm package (CentOS/RHEL/Fedora)"
+	@echo "  packages            Build both .deb and .rpm"
+	@echo ""
 	@echo "Container builds (podman):"
-	@echo "  cont-build-ubuntu   Build AppImage in Ubuntu 24.04 container"
-	@echo "  cont-build-centos   Build AppImage in CentOS Stream 9 container"
+	@echo "  cont-appimage       Build AppImage in Ubuntu container"
+	@echo "  cont-deb            Build .deb in Ubuntu container"
+	@echo "  cont-rpm            Build .rpm in CentOS Stream container"
+	@echo "  cont-flatpak        Build Flatpak in Ubuntu container (depends: flatpak-deps)"
+	@echo "  cont-all            Build all packages in containers (AppImage + deb + rpm + Flatpak)"
+	@echo "  cont-build-ubuntu   Build AppImage in Ubuntu container (alias for cont-appimage)"
+	@echo "  cont-build-centos   Build AppImage in CentOS Stream container"
 	@echo "  cont-enter          Interactive shell in Ubuntu container (CONT=centos for CentOS)"
 	@echo ""
 	@echo "Flatpak:"
 	@echo "  flatpak-deps        Install Flatpak SDK, runtime, and dotnet10 extension"
-	@echo "  flatpak             Build Flatpak with flatpak-builder"
-	@echo "  flatpak-install     Build and install Flatpak locally (--user)"
+	@echo "  flatpak             Build Flatpak with flatpak-builder (depends: flatpak-deps)"
+	@echo "  flatpak-install     Build and install Flatpak locally (depends: flatpak-deps)"
 	@echo "  flatpak-run         Run the installed Flatpak"
 	@echo "  flatpak-nuget-sources  Regenerate nuget-sources.json"
 	@echo ""
 	@echo "Utilities:"
-	@echo "  check-patches       Verify patches apply cleanly (dry-run)"
-	@echo "  update              Checkout upstream ref (requires TAG=)"
+	@echo "  check-patches       Verify patches apply cleanly (depends: update)"
+	@echo "  update              Checkout upstream ref (depends: submodule-init; requires TAG=)"
 	@echo "  clean               Remove build artifacts and reset submodule"
 	@echo ""
 	@echo "Examples:"
@@ -125,6 +138,17 @@ check-patches: update
 	echo ""; \
 	echo "All patches apply cleanly."
 
+# --- Native packages (fpm) ---
+
+deb: update
+	ARCH=$(ARCH) OUTPUT_DIR=$(OUTPUT_DIR) bash $(PKG_SCRIPT) build-deb
+
+rpm: update
+	ARCH=$(ARCH) OUTPUT_DIR=$(OUTPUT_DIR) bash $(PKG_SCRIPT) build-rpm
+
+packages: update
+	ARCH=$(ARCH) OUTPUT_DIR=$(OUTPUT_DIR) bash $(PKG_SCRIPT) build
+
 # --- Flatpak ---
 
 FLATPAK_RUNTIME_VER := 25.08
@@ -163,8 +187,8 @@ flatpak-nuget-sources:
 # --- Utilities ---
 
 clean:
-	rm -rf PurplePen.AppDir _build .flatpak-builder
-	rm -f *.AppImage
+	rm -rf PurplePen.AppDir _build .flatpak-builder _staging _pdfconverter-tmp
+	rm -f *.AppImage *.deb *.rpm
 	@if [ -d $(SUBMODULE_DIR) ]; then \
 		git -C $(SUBMODULE_DIR) checkout -- . 2>/dev/null || true; \
 		git -C $(SUBMODULE_DIR) clean -fd 2>/dev/null || true; \
@@ -175,13 +199,34 @@ clean:
 
 CONT_ENV := --env ARCH=$(ARCH) --env OUTPUT_DIR=/src --env DEBUG=$(DEBUG)
 
-cont-build-ubuntu:
+cont-appimage:
 	podman run --rm $(CONT_MOUNT) $(CONT_ENV) $(CONT_UBUNTU) \
 		bash /src/$(BUILD_SCRIPT) requirements build
+
+cont-build-ubuntu: cont-appimage
 
 cont-build-centos:
 	podman run --rm $(CONT_MOUNT) $(CONT_ENV) $(CONT_CENTOS) \
 		bash /src/$(BUILD_SCRIPT) requirements build
+
+cont-deb:
+	podman run --rm $(CONT_MOUNT) $(CONT_ENV) $(CONT_UBUNTU) \
+		bash /src/$(PKG_SCRIPT) requirements build-deb
+
+cont-rpm:
+	podman run --rm $(CONT_MOUNT) $(CONT_ENV) $(CONT_CENTOS) \
+		bash /src/$(PKG_SCRIPT) requirements build-rpm
+
+cont-flatpak:
+	podman run --rm --privileged $(CONT_MOUNT) $(CONT_ENV) $(CONT_UBUNTU) \
+		bash -c 'apt-get update && apt-get install -y flatpak flatpak-builder git && \
+		flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && \
+		flatpak install -y flathub org.freedesktop.Platform//$(FLATPAK_RUNTIME_VER) \
+			org.freedesktop.Sdk//$(FLATPAK_RUNTIME_VER) \
+			org.freedesktop.Sdk.Extension.dotnet10//$(FLATPAK_RUNTIME_VER) && \
+		flatpak-builder --disable-rofiles-fuse --force-clean /src/_build /src/$(FLATPAK_MANIFEST)'
+
+cont-all: cont-appimage cont-deb cont-rpm cont-flatpak
 
 cont-enter:
 ifeq ($(CONT),centos)
