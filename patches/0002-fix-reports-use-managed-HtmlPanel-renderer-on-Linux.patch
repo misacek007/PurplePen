@@ -1,0 +1,465 @@
+From 64d7aef3de682174ed0b4d807caaee9463ee3b7e Mon Sep 17 00:00:00 2001
+From: Michal Novacek <mnovacek@redhat.com>
+Date: Wed, 29 Jul 2026 15:03:39 +0200
+Subject: [PATCH 2/3] fix(reports): use managed HtmlPanel renderer on Linux
+X-Organization: Red Hat, Inc.
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="------------2.52.0"
+
+This is a multi-part message in MIME format.
+--------------2.52.0
+Content-Type: text/plain; charset=UTF-8; format=fixed
+Content-Transfer-Encoding: 8bit
+
+
+NativeWebView (WebKitGTK) fails to composite inside the Avalonia window
+on Linux, leaving report dialogs blank. Use HtmlPanel from
+Avalonia.HtmlRenderer as a managed fallback on non-Windows platforms.
+Windows behavior is unchanged (still uses WebView2).
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Signed-off-by: Michal Novacek <mnovacek@redhat.com>
+---
+ src/AvPurplePen/AvPurplePen.csproj            | 49 +++++++++--
+ .../Views/Dialogs/ReportDialog.axaml          | 18 ++--
+ .../Views/Dialogs/ReportDialog.axaml.cs       | 85 ++++++++++++++-----
+ .../Views/Dialogs/TeamVariationsDialog.axaml  | 17 ++--
+ .../Dialogs/TeamVariationsDialog.axaml.cs     | 60 ++++++++++---
+ src/Directory.Packages.props                  | 11 +--
+ 6 files changed, 173 insertions(+), 67 deletions(-)
+
+
+--------------2.52.0
+Content-Type: text/x-patch; name="0002-fix-reports-use-managed-HtmlPanel-renderer-on-Linux.patch"
+Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment; filename="0002-fix-reports-use-managed-HtmlPanel-renderer-on-Linux.patch"
+
+diff --git a/src/AvPurplePen/AvPurplePen.csproj b/src/AvPurplePen/AvPurplePen.csproj
+index 2196bc4bf..320f5b460 100644
+--- a/src/AvPurplePen/AvPurplePen.csproj
++++ b/src/AvPurplePen/AvPurplePen.csproj
+@@ -39,6 +39,7 @@
+     <PackageReference Include="Avalonia.Desktop" />
+     <PackageReference Include="Avalonia.Controls.DataGrid" />
+     <PackageReference Include="Avalonia.Controls.WebView" />
++    <PackageReference Include="Avalonia.HtmlRenderer" />
+     <PackageReference Include="Semi.Avalonia" />
+     <PackageReference Include="Semi.Avalonia.DataGrid" />
+ 
+@@ -49,11 +50,11 @@
+     </PackageReference>
+     <PackageReference Include="CommunityToolkit.Mvvm" />
+ 
+-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+-    <PackageReference Include="Microsoft.Extensions.Http" />
+-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+-
+-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers">
++    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
++    <PackageReference Include="Microsoft.Extensions.Http" />
++    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
++
++    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers">
+       <PrivateAssets>all</PrivateAssets>
+       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+     </PackageReference>
+@@ -92,9 +93,41 @@
+       <Generator>PublicResXFileCodeGenerator</Generator>
+       <LastGenOutput>UIText.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+-    <EmbeddedResource Update="UIText.*.resx">
+-      <DependentUpon>UIText.resx</DependentUpon>
+-    </EmbeddedResource>
++    <!-- Explicit Culture metadata is required because building with
++         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 (no ICU) prevents the
++         AssignCulture task from validating culture names automatically. -->
++    <EmbeddedResource Update="UIText.bg.resx"><Culture>bg</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.ca.resx"><Culture>ca</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.cs.resx"><Culture>cs</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.da.resx"><Culture>da</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.de.resx"><Culture>de</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.en-GB.resx"><Culture>en-GB</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.es.resx"><Culture>es</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.et.resx"><Culture>et</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.fi.resx"><Culture>fi</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.fr.resx"><Culture>fr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.he.resx"><Culture>he</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.hu.resx"><Culture>hu</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.id.resx"><Culture>id</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.it.resx"><Culture>it</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.ja.resx"><Culture>ja</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.ku.resx"><Culture>ku</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.nb-NO.resx"><Culture>nb-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.nl.resx"><Culture>nl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.nn-NO.resx"><Culture>nn-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.pl.resx"><Culture>pl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.pt.resx"><Culture>pt</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.pt-BR.resx"><Culture>pt-BR</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.ro.resx"><Culture>ro</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.ru.resx"><Culture>ru</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.sl.resx"><Culture>sl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.sv.resx"><Culture>sv</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.tr.resx"><Culture>tr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.uk.resx"><Culture>uk</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.vec.resx"><Culture>vec</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.zh-CN.resx"><Culture>zh-CN</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.zh-HK.resx"><Culture>zh-HK</Culture></EmbeddedResource>
++    <EmbeddedResource Update="UIText.zh-TW.resx"><Culture>zh-TW</Culture></EmbeddedResource>
+   </ItemGroup>
+   <!-- Build PdfConverter as a standalone exe tool.
+        Uses a direct MSBuild task instead of ProjectReference so the publish
+diff --git a/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml b/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml
+index 8b744721d..635db9bee 100644
+--- a/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml
++++ b/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml
+@@ -61,18 +61,14 @@
+                     IsCancel="True"/>
+         </Grid>
+ 
+-        <!-- Report area (fills the remaining space). The report is HTML, rendered
+-             by the native web view. The View wraps the ViewModel's ReportBody and
+-             Styles in a full HTML document (see code-behind) and pushes it via
+-             NavigateToString whenever it changes; there is no bindable HTML-string
+-             property. -->
+-        <!-- No CornerRadius: the native web view renders a rectangular surface and
+-             would not clip to rounded corners. -->
+-        <Border BorderBrush="{DynamicResource SemiGrey2}"
++        <!-- Report area (fills the remaining space). On Windows the report is
++             rendered by NativeWebView (WebView2); on Linux by HtmlPanel from
++             Avalonia.HtmlRenderer (managed, no native dependencies). The correct
++             control is created in code-behind based on the platform. -->
++        <Border x:Name="reportContainer"
++                BorderBrush="{DynamicResource SemiGrey2}"
+                 BorderThickness="1"
+-                Background="White">
+-            <NativeWebView x:Name="reportWebView" Background="White"/>
+-        </Border>
++                Background="White"/>
+ 
+     </DockPanel>
+ </Window>
+diff --git a/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml.cs b/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml.cs
+index 7da0d1a42..e5c8579a4 100644
+--- a/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml.cs
++++ b/src/AvPurplePen/Views/Dialogs/ReportDialog.axaml.cs
+@@ -2,19 +2,26 @@
+ //
+ // Code-behind for the generic report dialog. The report title, extra CSS styles
+ // and HTML body are data-bound to ReportDialogViewModel. This file owns closing
+-// the dialog, printing, and rendering the HTML report in the NativeWebView
+-// (which has no bindable HTML-string property, so the body is pushed
+-// imperatively via NavigateToString whenever it changes).
++// the dialog, printing, and rendering the HTML report.
++//
++// On Windows, the report is rendered by NativeWebView (WebView2). On Linux, it
++// uses HtmlPanel from Avalonia.HtmlRenderer — a managed HTML renderer that needs
++// no native WebKitGTK embedding (which can fail to composite in some Linux
++// configurations).
+ //
+ // Migrated from WinForms PurplePen/ReportForm.cs.
+ 
+ using System;
+ using System.ComponentModel;
++using System.Diagnostics;
++using System.IO;
+ using Avalonia.Controls;
+ using Avalonia.Interactivity;
++using Avalonia.Media;
+ using Avalonia.Threading;
+ using AvUtil;
+ using PurplePen.ViewModels;
++using TheArtOfDev.HtmlRenderer.Avalonia;
+ 
+ namespace AvPurplePen.Views
+ {
+@@ -27,9 +34,23 @@ namespace AvPurplePen.Views
+     {
+         private ReportDialogViewModel? viewModel;
+ 
++        // Platform-conditional rendering: exactly one of these is non-null.
++        private NativeWebView? nativeWebView;   // Windows (WebView2)
++        private HtmlPanel? htmlPanel;            // Linux (managed renderer)
++
+         public ReportDialog()
+         {
+             InitializeComponent();
++
++            if (OperatingSystem.IsWindows()) {
++                nativeWebView = new NativeWebView { Background = Brushes.White };
++                reportContainer.Child = nativeWebView;
++            }
++            else {
++                htmlPanel = new HtmlPanel { Background = Brushes.White };
++                reportContainer.Child = htmlPanel;
++            }
++
+             DataContextChanged += OnDataContextChanged;
+         }
+ 
+@@ -60,21 +81,30 @@ namespace AvPurplePen.Views
+         }
+ 
+         /// <summary>
+-        /// Wraps the current report title, styles and body in a full HTML document
+-        /// and shows it in the web view. NativeWebView queues the navigation if its
+-        /// native adapter is not ready yet, so this is safe to call before the
+-        /// dialog is shown.
++        /// Builds the full HTML document from the ViewModel and renders it.
+         /// </summary>
+         private void RenderReport()
+         {
+             if (viewModel == null)
+                 return;
+ 
+-            string html = HtmlTemplate
+-                .Replace("<!--@@TITLE@@-->", viewModel.ReportTitle ?? "")
+-                .Replace("<!--@@STYLES@@-->", viewModel.Styles ?? "")
+-                .Replace("<!--@@BODY@@-->", viewModel.ReportBody ?? "");
+-            reportWebView.NavigateToString(html);
++            string html = BuildHtml();
++
++            if (nativeWebView != null)
++                nativeWebView.NavigateToString(html);
++            else if (htmlPanel != null)
++                htmlPanel.Text = html;
++        }
++
++        /// <summary>
++        /// Assembles a full HTML document from the current ViewModel state.
++        /// </summary>
++        private string BuildHtml()
++        {
++            return HtmlTemplate
++                .Replace("<!--@@TITLE@@-->", viewModel?.ReportTitle ?? "")
++                .Replace("<!--@@STYLES@@-->", viewModel?.Styles ?? "")
++                .Replace("<!--@@BODY@@-->", viewModel?.ReportBody ?? "");
+         }
+ 
+         /// <summary>Closes the dialog. The report dialog returns no result.</summary>
+@@ -87,20 +117,37 @@ namespace AvPurplePen.Views
+         private const double printUiMinWidth = 1000;
+         private const double printUiMinHeight = 860;
+ 
+-        /// <summary>Opens the web view's print UI to print the report.</summary>
++        /// <summary>Opens the print UI for the report.</summary>
+         private void PrintButton_Click(object? sender, RoutedEventArgs e)
+         {
+-            // On Windows, WebView2's print preview is rendered inside the web view, so a
+-            // small dialog gives a cramped preview. Grow the window first if needed, then
+-            // let the resize settle (so the native control catches up) before opening it.
+-            if (OperatingSystem.IsWindows() && this.ExpandWindow(printUiMinWidth, printUiMinHeight)) {
+-                Dispatcher.UIThread.Post(() => reportWebView.ShowPrintUI(), DispatcherPriority.Background);
++            if (nativeWebView != null) {
++                // Windows: WebView2's print preview is rendered inside the web view, so a
++                // small dialog gives a cramped preview. Grow the window first if needed.
++                if (OperatingSystem.IsWindows() && this.ExpandWindow(printUiMinWidth, printUiMinHeight)) {
++                    Dispatcher.UIThread.Post(() => nativeWebView.ShowPrintUI(), DispatcherPriority.Background);
++                }
++                else {
++                    nativeWebView.ShowPrintUI();
++                }
+             }
+             else {
+-                reportWebView.ShowPrintUI();
++                // Linux: HtmlPanel has no print API. Write the report to a temp file and
++                // open it in the default browser so the user can print from there.
++                PrintViaDefaultBrowser();
+             }
+         }
+ 
++        /// <summary>
++        /// Writes the report HTML to a temp file and opens it in the default browser.
++        /// </summary>
++        private void PrintViaDefaultBrowser()
++        {
++            string html = BuildHtml();
++            string tempFile = Path.Combine(Path.GetTempPath(), "PurplePen_Report.html");
++            File.WriteAllText(tempFile, html, System.Text.Encoding.UTF8);
++            Process.Start(new ProcessStartInfo(tempFile) { UseShellExecute = true });
++        }
++
+         /// <summary>
+         /// HTML document wrapper for report bodies, carried over from the WinForms
+         /// ReportForm.htmlTemplate. Shared by the report dialogs (e.g.
+diff --git a/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml b/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml
+index 444d86dc4..a5b899a6c 100644
+--- a/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml
++++ b/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml
+@@ -146,17 +146,14 @@
+                     IsCancel="True"/>
+         </Grid>
+ 
+-        <!-- Report area (fills the remaining space). The report is HTML, rendered
+-             by the native web view. The View wraps the ViewModel's ReportBody in a
+-             full HTML document (see code-behind) and pushes it via NavigateToString
+-             whenever it changes; there is no bindable HTML-string property. -->
+-        <!-- No CornerRadius: the native web view renders a rectangular surface and
+-             would not clip to rounded corners. -->
+-        <Border BorderBrush="{DynamicResource SemiGrey2}"
++        <!-- Report area (fills the remaining space). On Windows the report is
++             rendered by NativeWebView (WebView2); on Linux by HtmlPanel from
++             Avalonia.HtmlRenderer (managed, no native dependencies). The correct
++             control is created in code-behind based on the platform. -->
++        <Border x:Name="reportContainer"
++                BorderBrush="{DynamicResource SemiGrey2}"
+                 BorderThickness="1"
+-                Background="White">
+-            <NativeWebView x:Name="reportWebView" Background="White"/>
+-        </Border>
++                Background="White"/>
+ 
+     </DockPanel>
+ </Window>
+diff --git a/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml.cs b/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml.cs
+index 9d42fef71..f42619346 100644
+--- a/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml.cs
++++ b/src/AvPurplePen/Views/Dialogs/TeamVariationsDialog.axaml.cs
+@@ -3,19 +3,25 @@
+ // Code-behind for the Relay Team Variations dialog. All relay state and the
+ // report body are data-bound to TeamVariationsDialogViewModel; the calculate,
+ // assign-legs and export operations are commands on the ViewModel. This file
+-// owns closing the dialog, printing, and rendering the HTML report in the
+-// NativeWebView (which has no bindable HTML-string property, so the body is
+-// pushed imperatively via NavigateToString whenever it changes).
++// owns closing the dialog, printing, and rendering the HTML report.
++//
++// On Windows, the report is rendered by NativeWebView (WebView2). On Linux, it
++// uses HtmlPanel from Avalonia.HtmlRenderer — a managed HTML renderer that needs
++// no native WebKitGTK embedding.
+ //
+ // Migrated from WinForms PurplePen/TeamVariationsForm.cs.
+ 
+ using System;
+ using System.ComponentModel;
++using System.Diagnostics;
++using System.IO;
+ using Avalonia.Controls;
+ using Avalonia.Interactivity;
++using Avalonia.Media;
+ using Avalonia.Threading;
+ using AvUtil;
+ using PurplePen.ViewModels;
++using TheArtOfDev.HtmlRenderer.Avalonia;
+ 
+ namespace AvPurplePen.Views
+ {
+@@ -29,9 +35,23 @@ namespace AvPurplePen.Views
+     {
+         private TeamVariationsDialogViewModel? viewModel;
+ 
++        // Platform-conditional rendering: exactly one of these is non-null.
++        private NativeWebView? nativeWebView;   // Windows (WebView2)
++        private HtmlPanel? htmlPanel;            // Linux (managed renderer)
++
+         public TeamVariationsDialog()
+         {
+             InitializeComponent();
++
++            if (OperatingSystem.IsWindows()) {
++                nativeWebView = new NativeWebView { Background = Brushes.White };
++                reportContainer.Child = nativeWebView;
++            }
++            else {
++                htmlPanel = new HtmlPanel { Background = Brushes.White };
++                reportContainer.Child = htmlPanel;
++            }
++
+             DataContextChanged += OnDataContextChanged;
+         }
+ 
+@@ -60,9 +80,7 @@ namespace AvPurplePen.Views
+         }
+ 
+         /// <summary>
+-        /// Wraps the current report body in a full HTML document and shows it in the
+-        /// web view. NativeWebView queues the navigation if its native adapter is not
+-        /// ready yet, so this is safe to call before the dialog is shown.
++        /// Builds the full HTML document and renders it in the appropriate control.
+         /// </summary>
+         private void RenderReport()
+         {
+@@ -71,7 +89,11 @@ namespace AvPurplePen.Views
+ 
+             string body = viewModel.ReportBody ?? "";
+             string html = ReportDialog.HtmlTemplate.Replace("<!--@@BODY@@-->", body);
+-            reportWebView.NavigateToString(html);
++
++            if (nativeWebView != null)
++                nativeWebView.NavigateToString(html);
++            else if (htmlPanel != null)
++                htmlPanel.Text = html;
+         }
+ 
+         /// <summary>
+@@ -87,17 +109,27 @@ namespace AvPurplePen.Views
+         // Minimum window size (logical pixels) wanted for a usable Windows print preview.
+         private const double printUiMinSize = 1000;
+ 
+-        /// <summary>Opens the web view's print UI to print the variation report.</summary>
++        /// <summary>Opens the print UI for the variation report.</summary>
+         private void PrintButton_Click(object? sender, RoutedEventArgs e)
+         {
+-            // On Windows, WebView2's print preview is rendered inside the web view, so a
+-            // small dialog gives a cramped preview. Grow the window first if needed, then
+-            // let the resize settle (so the native control catches up) before opening it.
+-            if (OperatingSystem.IsWindows() && this.ExpandWindow(printUiMinSize, printUiMinSize)) {
+-                Dispatcher.UIThread.Post(() => reportWebView.ShowPrintUI(), DispatcherPriority.Background);
++            if (nativeWebView != null) {
++                // Windows: WebView2's print preview is rendered inside the web view, so a
++                // small dialog gives a cramped preview. Grow the window first if needed.
++                if (OperatingSystem.IsWindows() && this.ExpandWindow(printUiMinSize, printUiMinSize)) {
++                    Dispatcher.UIThread.Post(() => nativeWebView.ShowPrintUI(), DispatcherPriority.Background);
++                }
++                else {
++                    nativeWebView.ShowPrintUI();
++                }
+             }
+             else {
+-                reportWebView.ShowPrintUI();
++                // Linux: HtmlPanel has no print API. Write the report to a temp file and
++                // open it in the default browser so the user can print from there.
++                string body = viewModel?.ReportBody ?? "";
++                string html = ReportDialog.HtmlTemplate.Replace("<!--@@BODY@@-->", body);
++                string tempFile = Path.Combine(Path.GetTempPath(), "PurplePen_Report.html");
++                File.WriteAllText(tempFile, html, System.Text.Encoding.UTF8);
++                Process.Start(new ProcessStartInfo(tempFile) { UseShellExecute = true });
+             }
+         }
+     }
+diff --git a/src/Directory.Packages.props b/src/Directory.Packages.props
+index e672ac4c8..b35db2482 100644
+--- a/src/Directory.Packages.props
++++ b/src/Directory.Packages.props
+@@ -16,10 +16,10 @@
+     <PackageVersion Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.1" />
+     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+     <PackageVersion Include="Microsoft.Windows.SDK.Contracts" Version="10.0.26100.7463" />
+-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.8" />
+-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0" />
++    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
++    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
++    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.8" />
++    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0" />
+     <PackageVersion Include="MSTest.TestAdapter" Version="4.2.3" />
+     <PackageVersion Include="MSTest.TestFramework" Version="4.2.3" />
+     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+@@ -41,6 +41,7 @@
+     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.0.4" />
+     <PackageVersion Include="Avalonia.Controls.DataGrid" Version="12.0.0" />
+     <PackageVersion Include="Avalonia.Controls.WebView" Version="12.0.1" />
++    <PackageVersion Include="Avalonia.HtmlRenderer" Version="12.0.0" />
+     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1" />
+     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+     <PackageVersion Include="Semi.Avalonia" Version="12.0.3" />
+@@ -67,4 +68,4 @@
+     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-qxrv-gp6x-rc23" />
+     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rxmq-m78w-7wmc" />
+   </ItemGroup>
+-</Project>
++</Project>
+
+--------------2.52.0--
+
+

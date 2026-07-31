@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.purplepen.PurplePen</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Purple Pen</name>
+  <summary>Course setting software for orienteering</summary>
+  <description>
+    <p>
+      Purple Pen is a course setting program for orienteering races. It allows
+      you to design orienteering courses on maps, manage control points, create
+      course descriptions, and export materials for printing and race management.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Design courses on OCAD and OpenMapper maps</li>
+      <li>Automatic control descriptions (IOF symbols)</li>
+      <li>Print courses, descriptions, and punch cards</li>
+      <li>Export to PDF, OCAD, and image formats</li>
+      <li>Relay and score course support</li>
+      <li>Course variations and map exchanges</li>
+    </ul>
+  </description>
+  <developer id="org.purplepen">
+    <name>Peter Golde</name>
+  </developer>
+  <url type="homepage">https://purple-pen.org</url>
+  <url type="bugtracker">https://github.com/petergolde/PurplePen/issues</url>
+  <url type="vcs-browser">https://github.com/petergolde/PurplePen</url>
+  <launchable type="desktop-id">org.purplepen.PurplePen.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Designing an orienteering course on a map</caption>
+      <image>https://raw.githubusercontent.com/petergolde/PurplePen/3163fc93645017a478d1fb8b85eb11bb075cbd27/doc/userdocs/WebSite/images/screenshot1.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Editing control descriptions with IOF symbols</caption>
+      <image>https://raw.githubusercontent.com/petergolde/PurplePen/3163fc93645017a478d1fb8b85eb11bb075cbd27/doc/userdocs/WebSite/images/screenshot2.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="4.0.0" date="2025-01-01">
+      <description>
+        <p>First cross-platform release using Avalonia UI with Linux support.</p>
+      </description>
+    </release>
+  </releases>
+  <branding>
+    <color type="primary" scheme_preference="light">#7B1FA2</color>
+    <color type="primary" scheme_preference="dark">#4A0072</color>
+  </branding>
+  <provides>
+    <mediatype>application/x-purplepen</mediatype>
+  </provides>
+  <content_rating type="oars-1.1" />
+</component>

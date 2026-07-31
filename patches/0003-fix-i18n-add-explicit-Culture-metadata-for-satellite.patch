@@ -1,0 +1,200 @@
+From 951b0e4fa05bfa432ae94f35ed3d22fa671ca298 Mon Sep 17 00:00:00 2001
+From: Michal Novacek <mnovacek@redhat.com>
+Date: Wed, 29 Jul 2026 15:03:59 +0200
+Subject: [PATCH 3/3] fix(i18n): add explicit Culture metadata for satellite
+ assembly generation
+X-Organization: Red Hat, Inc.
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="------------2.52.0"
+
+This is a multi-part message in MIME format.
+--------------2.52.0
+Content-Type: text/plain; charset=UTF-8; format=fixed
+Content-Transfer-Encoding: 8bit
+
+
+Building with DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 (no ICU) prevents
+MSBuild AssignCulture from detecting culture names, producing no
+satellite assemblies. Set Culture explicitly on each translated .resx
+in AvPurplePen and PurplePenCore so all 32 languages are included.
+
+Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Signed-off-by: Michal Novacek <mnovacek@redhat.com>
+---
+ src/PurplePenCore/PurplePenCore.csproj | 137 +++++++++++++++++++++----
+ 1 file changed, 119 insertions(+), 18 deletions(-)
+
+
+--------------2.52.0
+Content-Type: text/x-patch; name="0003-fix-i18n-add-explicit-Culture-metadata-for-satellite.patch"
+Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment; filename="0003-fix-i18n-add-explicit-Culture-metadata-for-satellite.patch"
+
+diff --git a/src/PurplePenCore/PurplePenCore.csproj b/src/PurplePenCore/PurplePenCore.csproj
+index 3c9450525..0f591d308 100644
+--- a/src/PurplePenCore/PurplePenCore.csproj
++++ b/src/PurplePenCore/PurplePenCore.csproj
+@@ -119,40 +119,141 @@
+       <Generator>PublicResXFileCodeGenerator</Generator>
+       <LastGenOutput>CommandNameText.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+-    <EmbeddedResource Update="CommandNameText.*.resx">
+-      <DependentUpon>CommandNameText.resx</DependentUpon>
+-    </EmbeddedResource>
+-    <EmbeddedResource Update="CoreMiscText.*.resx">
+-      <DependentUpon>CoreMiscText.resx</DependentUpon>
+-    </EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.*.resx" />
++    <EmbeddedResource Update="CoreMiscText.*.resx" />
++    <!-- Explicit Culture metadata is required because building with
++         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 (no ICU) prevents the
++         AssignCulture task from validating culture names automatically. -->
++    <EmbeddedResource Update="CommandNameText.bg.resx"><Culture>bg</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.cs.resx"><Culture>cs</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.da.resx"><Culture>da</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.de.resx"><Culture>de</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.es.resx"><Culture>es</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.et.resx"><Culture>et</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.fi.resx"><Culture>fi</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.fr.resx"><Culture>fr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.hu.resx"><Culture>hu</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.ja.resx"><Culture>ja</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.nb-NO.resx"><Culture>nb-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.nl.resx"><Culture>nl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.nn-NO.resx"><Culture>nn-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.pl.resx"><Culture>pl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.pt.resx"><Culture>pt</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.pt-BR.resx"><Culture>pt-BR</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.ro.resx"><Culture>ro</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.sv.resx"><Culture>sv</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.tr.resx"><Culture>tr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.uk.resx"><Culture>uk</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.zh-CN.resx"><Culture>zh-CN</Culture></EmbeddedResource>
++    <EmbeddedResource Update="CommandNameText.zh-TW.resx"><Culture>zh-TW</Culture></EmbeddedResource>
+     <EmbeddedResource Update="MiscText.resx">
+       <Generator>PublicResXFileCodeGenerator</Generator>
+       <LastGenOutput>MiscText.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+-    <EmbeddedResource Update="MiscText.*.resx">
+-      <DependentUpon>MiscText.resx</DependentUpon>
+-    </EmbeddedResource>
++    <EmbeddedResource Update="MiscText.*.resx" />
++    <EmbeddedResource Update="MiscText.bg.resx"><Culture>bg</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.cs.resx"><Culture>cs</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.da.resx"><Culture>da</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.de.resx"><Culture>de</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.es.resx"><Culture>es</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.et.resx"><Culture>et</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.fi.resx"><Culture>fi</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.fr.resx"><Culture>fr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.hu.resx"><Culture>hu</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.ja.resx"><Culture>ja</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.nb-NO.resx"><Culture>nb-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.nl.resx"><Culture>nl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.nn-NO.resx"><Culture>nn-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.pl.resx"><Culture>pl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.pt.resx"><Culture>pt</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.pt-BR.resx"><Culture>pt-BR</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.ro.resx"><Culture>ro</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.sv.resx"><Culture>sv</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.tr.resx"><Culture>tr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.uk.resx"><Culture>uk</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.zh-CN.resx"><Culture>zh-CN</Culture></EmbeddedResource>
++    <EmbeddedResource Update="MiscText.zh-TW.resx"><Culture>zh-TW</Culture></EmbeddedResource>
+     <EmbeddedResource Update="ReportText.resx">
+       <Generator>ResXFileCodeGenerator</Generator>
+       <LastGenOutput>ReportText.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+-    <EmbeddedResource Update="ReportText.*.resx">
+-      <DependentUpon>ReportText.resx</DependentUpon>
+-    </EmbeddedResource>
++    <EmbeddedResource Update="ReportText.*.resx" />
++    <EmbeddedResource Update="ReportText.bg.resx"><Culture>bg</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.cs.resx"><Culture>cs</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.da.resx"><Culture>da</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.de.resx"><Culture>de</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.es.resx"><Culture>es</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.et.resx"><Culture>et</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.fi.resx"><Culture>fi</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.fr.resx"><Culture>fr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.hu.resx"><Culture>hu</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.ja.resx"><Culture>ja</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.nb-NO.resx"><Culture>nb-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.nl.resx"><Culture>nl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.nn-NO.resx"><Culture>nn-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.pl.resx"><Culture>pl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.pt.resx"><Culture>pt</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.pt-BR.resx"><Culture>pt-BR</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.ro.resx"><Culture>ro</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.sv.resx"><Culture>sv</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.tr.resx"><Culture>tr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.uk.resx"><Culture>uk</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.zh-CN.resx"><Culture>zh-CN</Culture></EmbeddedResource>
++    <EmbeddedResource Update="ReportText.zh-TW.resx"><Culture>zh-TW</Culture></EmbeddedResource>
+     <EmbeddedResource Update="SelectionDescriptionText.resx">
+       <Generator>ResXFileCodeGenerator</Generator>
+       <LastGenOutput>SelectionDescriptionText.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+-    <EmbeddedResource Update="SelectionDescriptionText.*.resx">
+-      <DependentUpon>SelectionDescriptionText.resx</DependentUpon>
+-    </EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.*.resx" />
++    <EmbeddedResource Update="SelectionDescriptionText.bg.resx"><Culture>bg</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.cs.resx"><Culture>cs</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.da.resx"><Culture>da</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.de.resx"><Culture>de</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.es.resx"><Culture>es</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.et.resx"><Culture>et</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.fi.resx"><Culture>fi</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.fr.resx"><Culture>fr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.hu.resx"><Culture>hu</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.ja.resx"><Culture>ja</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.nb-NO.resx"><Culture>nb-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.nl.resx"><Culture>nl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.nn-NO.resx"><Culture>nn-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.pl.resx"><Culture>pl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.pt.resx"><Culture>pt</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.pt-BR.resx"><Culture>pt-BR</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.ro.resx"><Culture>ro</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.sv.resx"><Culture>sv</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.tr.resx"><Culture>tr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.uk.resx"><Culture>uk</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.zh-CN.resx"><Culture>zh-CN</Culture></EmbeddedResource>
++    <EmbeddedResource Update="SelectionDescriptionText.zh-TW.resx"><Culture>zh-TW</Culture></EmbeddedResource>
+     <EmbeddedResource Update="StatusBarText.resx">
+       <Generator>PublicResXFileCodeGenerator</Generator>
+       <LastGenOutput>StatusBarText.Designer.cs</LastGenOutput>
+     </EmbeddedResource>
+-    <EmbeddedResource Update="StatusBarText.*.resx">
+-      <DependentUpon>StatusBarText.resx</DependentUpon>
+-    </EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.*.resx" />
++    <EmbeddedResource Update="StatusBarText.bg.resx"><Culture>bg</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.cs.resx"><Culture>cs</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.da.resx"><Culture>da</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.de.resx"><Culture>de</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.es.resx"><Culture>es</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.et.resx"><Culture>et</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.fi.resx"><Culture>fi</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.fr.resx"><Culture>fr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.hu.resx"><Culture>hu</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.ja.resx"><Culture>ja</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.nb-NO.resx"><Culture>nb-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.nl.resx"><Culture>nl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.nn-NO.resx"><Culture>nn-NO</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.pl.resx"><Culture>pl</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.pt.resx"><Culture>pt</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.pt-BR.resx"><Culture>pt-BR</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.ro.resx"><Culture>ro</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.sv.resx"><Culture>sv</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.tr.resx"><Culture>tr</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.uk.resx"><Culture>uk</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.zh-CN.resx"><Culture>zh-CN</Culture></EmbeddedResource>
++    <EmbeddedResource Update="StatusBarText.zh-TW.resx"><Culture>zh-TW</Culture></EmbeddedResource>
+   </ItemGroup>
+ 
+   <ItemGroup>
+
+--------------2.52.0--
+
+

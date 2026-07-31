@@ -1,0 +1,31 @@
+# Build artifacts
+*.AppImage
+PurplePen.AppDir/
+
+# AppImage tools (downloaded at build time)
+packaging/linux/tools/
+
+# .NET build output (inside submodule)
+bin/
+obj/
+
+# Editor / IDE
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude local settings
+.claude/settings.local.json
+
+# WIP files at repo root (not part of this tooling repo)
+/AvPurplePen/
+/PurplePen/
+/PurplePenCore/
+/PurplePenViewModels/
+/PurplePen_Tests/

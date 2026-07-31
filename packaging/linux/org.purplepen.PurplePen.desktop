@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Purple Pen
+GenericName=Orienteering Course Setter
+Comment=Design orienteering courses on maps
+Exec=AvPurplePen %f
+Icon=org.purplepen.PurplePen
+Terminal=false
+Categories=Education;Graphics;
+MimeType=application/x-purplepen;
+StartupWMClass=AvPurplePen

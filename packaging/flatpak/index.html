@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Purple Pen — Flatpak Repository</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2em auto; padding: 0 1em; line-height: 1.6; color: #222; }
+    h1 { color: #7B1FA2; }
+    code { background: #f4f0f7; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.95em; }
+    pre { background: #f4f0f7; padding: 1em; border-radius: 6px; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+    a { color: #7B1FA2; }
+  </style>
+</head>
+<body>
+  <h1>Purple Pen — Flatpak Repository</h1>
+  <p>
+    <a href="https://purple-pen.org">Purple Pen</a> is course setting software
+    for orienteering. This page hosts a Flatpak repository for Linux.
+  </p>
+
+  <h2>Install</h2>
+  <pre><code>flatpak remote-add --user --if-not-exists purplepen \
+  https://misacek007.github.io/PurplePen/index.flatpakrepo
+
+flatpak install --user purplepen org.purplepen.PurplePen</code></pre>
+
+  <h2>Update</h2>
+  <pre><code>flatpak update</code></pre>
+
+  <h2>Run</h2>
+  <pre><code>flatpak run org.purplepen.PurplePen</code></pre>
+
+  <h2>Inspect installed files</h2>
+  <pre><code># Show install path, then list its contents
+flatpak info -l org.purplepen.PurplePen
+ls $(flatpak info -l org.purplepen.PurplePen)/files/
+
+# Browse files inside the sandbox
+flatpak run --command=ls org.purplepen.PurplePen /app/bin/
+flatpak run --command=ls org.purplepen.PurplePen /app/share/
+
+# Show app metadata and permissions
+flatpak info org.purplepen.PurplePen
+flatpak info -m org.purplepen.PurplePen</code></pre>
+
+  <p>
+    Source code:
+    <a href="https://github.com/petergolde/PurplePen">upstream</a> &middot;
+    <a href="https://github.com/misacek007/PurplePen">packaging</a>
+  </p>
+</body>
+</html>

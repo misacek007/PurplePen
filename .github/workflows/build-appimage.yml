@@ -1,0 +1,170 @@
+name: Build Linux AppImage
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      upstream_ref:
+        description: 'Upstream ref to build (tag, branch, or SHA). Empty = pinned submodule commit.'
+        required: false
+        default: ''
+      release:
+        description: 'Create a GitHub Release with the built AppImage.'
+        required: false
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark the release as a pre-release.'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-appimage-debian:
+    name: Build AppImage (Debian)
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+    steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y wget git fuse libfuse2 librsvg2-bin file
+
+      - name: Install .NET 10 SDK
+        run: |
+          apt-get install -y ca-certificates apt-transport-https
+          wget -q https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel 10.0
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Mark workspace as safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/src"
+
+      - name: Checkout upstream ref
+        if: inputs.upstream_ref != ''
+        run: |
+          git -C src fetch --tags origin
+          git -C src checkout ${{ inputs.upstream_ref }}
+
+      - name: Build AppImage
+        run: OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts" bash packaging/linux/build-appimage.sh
+
+      - name: Verify AppImage
+        run: |
+          APPIMAGE=$(ls "$GITHUB_WORKSPACE/artifacts/"*.AppImage)
+          echo "AppImage: $APPIMAGE"
+          echo "Size: $(du -h "$APPIMAGE" | cut -f1)"
+          file "$APPIMAGE"
+          test -f "$APPIMAGE"
+          test -x "$APPIMAGE"
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-debian
+          path: artifacts/*.AppImage
+          retention-days: 14
+
+  build-appimage-centos:
+    name: Build AppImage (CentOS Stream)
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/centos/centos:stream9
+    steps:
+      - name: Install system dependencies
+        run: |
+          dnf install -y wget git fuse fuse-libs librsvg2-tools file libicu
+
+      - name: Install .NET 10 SDK
+        run: |
+          wget -q https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --channel 10.0
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Mark workspace as safe directory
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/src"
+
+      - name: Checkout upstream ref
+        if: inputs.upstream_ref != ''
+        run: |
+          git -C src fetch --tags origin
+          git -C src checkout ${{ inputs.upstream_ref }}
+
+      - name: Build AppImage
+        run: OUTPUT_DIR="$GITHUB_WORKSPACE/artifacts" bash packaging/linux/build-appimage.sh
+
+      - name: Verify AppImage
+        run: |
+          APPIMAGE=$(ls "$GITHUB_WORKSPACE/artifacts/"*.AppImage)
+          echo "AppImage: $APPIMAGE"
+          echo "Size: $(du -h "$APPIMAGE" | cut -f1)"
+          file "$APPIMAGE"
+          test -f "$APPIMAGE"
+          test -x "$APPIMAGE"
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-centos
+          path: artifacts/*.AppImage
+          retention-days: 14
+
+  release:
+    name: Publish Release
+    needs: build-appimage-debian
+    if: inputs.release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: appimage-debian
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          APPIMAGE=$(ls *.AppImage)
+          VERSION=$(echo "$APPIMAGE" | grep -oP 'PurplePen-\K[0-9]+\.[0-9]+\.[0-9]+')
+          REF="${{ inputs.upstream_ref }}"
+          if [ -n "$REF" ]; then
+            TAG="$VERSION-${REF}"
+          else
+            TAG="$VERSION"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: PurplePen AppImage ${{ steps.tag.outputs.tag }}
+          files: '*.AppImage'
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true

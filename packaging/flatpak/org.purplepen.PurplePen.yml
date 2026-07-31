@@ -1,0 +1,84 @@
+id: org.purplepen.PurplePen
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.dotnet10
+# AssemblyName was renamed from AvPurplePen to PurplePen upstream;
+# update this when the pinned commit is bumped past the rename.
+command: AvPurplePen
+
+finish-args:
+  - --device=dri
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --filesystem=xdg-documents
+  - --filesystem=xdg-download
+  - --filesystem=xdg-desktop
+  - --filesystem=/run/media
+  - --socket=cups
+  - --env=DOTNET_ROOT=/app/lib/dotnet
+
+cleanup:
+  - /lib/pkgconfig
+  - '*.la'
+
+modules:
+  - name: purplepen
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/dotnet10/bin
+      append-ld-library-path: /usr/lib/sdk/dotnet10/lib
+      prepend-pkg-config-path: /usr/lib/sdk/dotnet10/lib/pkgconfig
+      env:
+        DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+        DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+        DOTNET_ROOT: /usr/lib/sdk/dotnet10/lib/dotnet
+    sources:
+      - type: git
+        url: https://github.com/petergolde/PurplePen.git
+        commit: 3163fc93645017a478d1fb8b85eb11bb075cbd27
+      - type: patch
+        path: ../../patches/0001-Fix-PdfConverter-path-for-Linux-and-add-linux-x64-pu.patch
+      - type: patch
+        path: ../../patches/0002-fix-reports-use-managed-HtmlPanel-renderer-on-Linux.patch
+      - type: patch
+        path: ../../patches/0003-fix-i18n-add-explicit-Culture-metadata-for-satellite.patch
+      - type: file
+        path: ../../packaging/linux/org.purplepen.PurplePen.desktop
+      - type: file
+        path: ../../packaging/linux/org.purplepen.PurplePen.png
+      - type: file
+        path: ../../packaging/linux/org.purplepen.PurplePen.metainfo.xml
+      - type: file
+        path: ../../packaging/linux/org.purplepen.PurplePen-ppen.xml
+      - type: file
+        path: nuget.config
+        dest-filename: flatpak-nuget.config
+      - nuget-sources.json
+    build-commands:
+      - |
+        dotnet restore src/AvPurplePen/AvPurplePen.csproj --configfile flatpak-nuget.config
+        dotnet restore src/PdfConverter/PdfConverter.csproj --configfile flatpak-nuget.config
+        dotnet publish src/AvPurplePen/AvPurplePen.csproj -c Release --no-restore --no-self-contained -o publish/
+        dotnet publish src/PdfConverter/PdfConverter.csproj -c Release --no-restore --no-self-contained -o publish/
+      - mkdir -p /app/bin
+      - cp -r publish/* /app/bin/
+      - install -Dm644 org.purplepen.PurplePen.desktop
+          /app/share/applications/org.purplepen.PurplePen.desktop
+      - install -Dm644 org.purplepen.PurplePen.png
+          /app/share/icons/hicolor/256x256/apps/org.purplepen.PurplePen.png
+      - install -Dm644 org.purplepen.PurplePen.metainfo.xml
+          /app/share/metainfo/org.purplepen.PurplePen.metainfo.xml
+      - install -Dm644 org.purplepen.PurplePen-ppen.xml
+          /app/share/mime/packages/org.purplepen.PurplePen-ppen.xml
+
+  - name: dotnet-runtime
+    buildsystem: simple
+    build-options:
+      no-debuginfo: true
+      no-debuginfo-compression: true
+      strip: false
+    build-commands:
+      - /usr/lib/sdk/dotnet10/bin/install.sh
