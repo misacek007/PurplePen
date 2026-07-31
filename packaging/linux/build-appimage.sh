@@ -160,14 +160,22 @@ publish() {
 
     log "Publishing AvPurplePen ($RID, self-contained)..."
 
+    # DisableGitVersionTask: PDFsharp uses GitVersion.MsBuild which fails on
+    # shallow clones (object not found walking the commit graph). We don't
+    # need GitVersion for our builds.
+    local -a dotnet_props=(
+        -p:PublishReadyToRun=false
+        -p:PublishTrimmed=false
+        -p:DisableGitVersionTask=true
+    )
+
     dotnet restore "$SRC_DIR/AvPurplePen/AvPurplePen.csproj" -r "$RID"
 
     dotnet publish "$SRC_DIR/AvPurplePen/AvPurplePen.csproj" \
         -c Release \
         -r "$RID" \
         --self-contained true \
-        -p:PublishReadyToRun=false \
-        -p:PublishTrimmed=false \
+        "${dotnet_props[@]}" \
         -o "$publish_dir"
 
     info "Published to: $publish_dir"
@@ -183,6 +191,7 @@ publish() {
         -c Release \
         -r "$RID" \
         --self-contained true \
+        "${dotnet_props[@]}" \
         -p:BaseOutputPath="$pdfconv_tmp/obj/" \
         -o "$pdfconv_tmp/out"
 
