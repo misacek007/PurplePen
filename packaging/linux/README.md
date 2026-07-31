@@ -191,11 +191,78 @@ integration — users can extract the `.desktop` file from the AppImage with:
 ./PurplePen-*.AppImage --appimage-extract org.purplepen.PurplePen.desktop
 ```
 
+## Native Packages (.deb / .rpm)
+
+In addition to AppImage, you can build native `.deb` and `.rpm` packages
+using [fpm](https://fpm.readthedocs.io/):
+
+```bash
+# Build both .deb and .rpm
+./packaging/linux/build-packages.sh
+
+# Or build one format
+./packaging/linux/build-packages.sh build-deb
+./packaging/linux/build-packages.sh build-rpm
+
+# Via Make
+make deb
+make rpm
+make packages
+```
+
+### Prerequisites for native packages
+
+Everything needed for AppImage builds, plus:
+
+```bash
+# Debian/Ubuntu
+sudo apt install -y ruby ruby-dev gcc make
+sudo gem install fpm
+
+# CentOS/RHEL/Fedora
+sudo dnf install -y ruby ruby-devel gcc make rpm-build
+sudo gem install fpm
+```
+
+### What the packages install
+
+| Path | Contents |
+|---|---|
+| `/opt/purplepen/` | Full self-contained application (binary, .NET runtime, native libs, fonts) |
+| `/usr/bin/purplepen` | Symlink to `/opt/purplepen/<binary>` |
+| `/usr/share/applications/` | `.desktop` file |
+| `/usr/share/icons/hicolor/` | Application icon (256x256 + scalable SVG) |
+| `/usr/share/metainfo/` | AppStream metadata |
+| `/usr/share/mime/packages/` | `.ppen` MIME type |
+
+### Installing
+
+```bash
+# Debian/Ubuntu
+sudo dpkg -i purplepen_*.deb
+
+# CentOS/RHEL/Fedora
+sudo rpm -i purplepen-*.rpm
+```
+
+### Uninstalling
+
+```bash
+# Debian/Ubuntu
+sudo apt remove purplepen
+
+# CentOS/RHEL/Fedora
+sudo rpm -e purplepen
+```
+
 ## Files in This Directory
 
 | File | Purpose |
 |---|---|
-| `build-appimage.sh` | The build script (one command to produce an AppImage) |
+| `build-appimage.sh` | Build script for AppImage |
+| `build-packages.sh` | Build script for .deb and .rpm via fpm |
+| `postinst.sh` | Post-install hook (updates desktop/MIME/icon caches) |
+| `postrm.sh` | Post-remove hook (same cache updates) |
 | `org.purplepen.PurplePen.desktop` | Freedesktop `.desktop` file for application menu integration |
 | `org.purplepen.PurplePen.metainfo.xml` | AppStream metadata for software centers |
 | `org.purplepen.PurplePen-ppen.xml` | MIME type definition for `.ppen` event files |
