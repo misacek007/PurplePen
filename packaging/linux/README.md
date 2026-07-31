@@ -287,7 +287,7 @@ Current patches:
 To update patches when upstream changes the patched files:
 ```bash
 cd src
-git am --check ../patches/*.patch    # check if patches still apply
+git apply --check --ignore-whitespace ../patches/*.patch
 # If they fail, rebase manually and regenerate:
 #   git format-patch --relative=src/ <old-base>..<new-base> -- src/
 ```

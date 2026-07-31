@@ -119,14 +119,22 @@ $(SCRIPT_TARGETS): update
 
 check-patches: update
 	@echo ">>> Checking patches against $$(git -C $(SUBMODULE_DIR) describe --tags --always)..."
-	@if git -C $(SUBMODULE_DIR) am --check $(PATCHES_DIR)/*.patch 2>/dev/null; then \
-		echo "All patches apply cleanly."; \
-	else \
+	@fail=0; \
+	for p in $(PATCHES_DIR)/*.patch; do \
+		name=$$(basename "$$p"); \
+		if git -C $(SUBMODULE_DIR) apply --check --ignore-whitespace "$$PWD/$$p" 2>/dev/null; then \
+			echo "    OK: $$name"; \
+		else \
+			echo "    FAIL: $$name"; \
+			fail=1; \
+		fi; \
+	done; \
+	if [ "$$fail" -eq 1 ]; then \
 		echo ""; \
-		echo "ERROR: Patches do not apply to this ref."; \
-		echo "       Patches target the Avalonia codebase (post-3.5.4)."; \
+		echo "ERROR: Some patches do not apply to this ref."; \
 		exit 1; \
-	fi
+	fi; \
+	echo "All patches apply cleanly."
 
 # --- Native packages (fpm) ---
 

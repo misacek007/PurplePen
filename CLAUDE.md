@@ -33,7 +33,7 @@ They are generated with `git format-patch --relative=src/` so paths are relative
 to the submodule root. To check if patches still apply against current upstream:
 
 ```bash
-git -C src am --check patches/*.patch
+git -C src apply --check --ignore-whitespace patches/*.patch
 ```
 
 ## Flatpak NuGet Sources
