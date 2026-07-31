@@ -148,7 +148,7 @@ extract-version() {
 
     [[ -f "$version_file" ]] || die "Version file not found: $version_file"
 
-    FULL_VERSION="$(grep -oP 'Current\s*=\s*"\K[^"]+' "$version_file")"
+    FULL_VERSION="$(sed -n 's/.*Current[[:space:]]*=[[:space:]]*"\([0-9.]*\)".*/\1/p' "$version_file")"
     SHORT_VERSION="$(printf "%s" "$FULL_VERSION" | cut -d. -f1-3)"
 
     [[ -n "$FULL_VERSION" ]] || die "Could not extract version from $version_file"
